@@ -1,0 +1,109 @@
+Consider a table Employee with schema as Employee (Emp_id, Emp_Name,Salary).
+1. Write an explicit cursor to display records of all employees with salary greater than 50,000.
+2. Write a PL/SQL block of code using Implicit Cursor that will display total number of tuples in Employee
+table.
+3. Write a PL/SQL block of code using Parameterized Cursor that will display salary of employee id entered by
+the user.
+
+
+-- Create the Employee Table
+CREATE TABLE Employee (
+    Emp_id INT PRIMARY KEY,
+    Emp_Name VARCHAR(100),
+    Salary DECIMAL(10, 2)
+);
+
+-- Insert data into Employee Table
+INSERT INTO Employee (Emp_id, Emp_Name, Salary) VALUES
+(101, 'Amit Sharma', 12000.00),
+(102, 'Rajeev Gupta', 60000.00),
+(103, 'Neha Verma', 80000.00),
+(104, 'Kiran Yadav', 50000.00),
+(105, 'Suman Singh', 70000.00),
+(106, 'Priya Gupta', 45000.00);
+
+-- Explicit Cursor: Display records of all employees with salary greater than 50,000
+DELIMITER //
+
+CREATE PROCEDURE GetHighSalaryEmployees()
+BEGIN
+    DECLARE v_emp_id INT;
+    DECLARE v_emp_name VARCHAR(100);
+    DECLARE v_salary DECIMAL(10, 2);
+    DECLARE done INT DEFAULT 0;
+
+    DECLARE employee_cursor CURSOR FOR
+        SELECT Emp_id, Emp_Name, Salary
+        FROM Employee
+        WHERE Salary > 50000;
+
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
+
+    OPEN employee_cursor;
+
+    read_loop: LOOP
+        FETCH employee_cursor INTO v_emp_id, v_emp_name, v_salary;
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+        
+        -- Display the employee record
+        SELECT v_emp_id AS Employee_ID, v_emp_name AS Employee_Name, v_salary AS Salary;
+    END LOOP;
+
+    CLOSE employee_cursor;
+END //
+
+DELIMITER ;
+
+-- To call the procedure and see the result:
+CALL GetHighSalaryEmployees();
+
+
+-- Implicit Cursor: Display the total number of tuples in the Employee table
+DELIMITER //
+
+CREATE PROCEDURE GetEmployeeCount()
+BEGIN
+    DECLARE total_count INT;
+
+    -- Implicit Cursor to get the count
+    SELECT COUNT(*) INTO total_count FROM Employee;
+
+    -- Display the result
+    SELECT total_count AS Total_Employees;
+END //
+
+DELIMITER ;
+
+-- To call the procedure and see the result:
+CALL GetEmployeeCount();
+
+
+-- Parameterized Cursor: Display the salary of the employee based on entered Emp_id
+DELIMITER //
+
+CREATE PROCEDURE GetEmployeeSalary(IN emp_id_input INT)
+BEGIN
+    DECLARE v_salary DECIMAL(10, 2);
+
+    -- Parameterized Cursor to fetch salary of a specific employee
+    DECLARE salary_cursor CURSOR FOR
+        SELECT Salary
+        FROM Employee
+        WHERE Emp_id = emp_id_input;
+
+    OPEN salary_cursor;
+
+    FETCH salary_cursor INTO v_salary;
+
+    -- Display the salary of the employee
+    SELECT v_salary AS Employee_Salary;
+
+    CLOSE salary_cursor;
+END //
+
+DELIMITER ;
+
+-- To call the procedure and see the result:
+CALL GetEmployeeSalary(101);  -- Pass Emp_id to get salary for specific employee

@@ -1,0 +1,110 @@
+Problem Statement 17 (JOINS & SUBQUERIES USING MYSQL)
+Consider Following Schema
+Employee (Employee_id, First_name, Last_name , Hire_date, Salary, Job_title, Manager_id, department_id)
+Departments(Department_id, Department_name, Manager_id, Location_id)
+Locations(Location_id , Street_address , Postal_code, city, state, Country_id)
+Manager(Manager_id, Manager_name)
+Create the tables with referential integrity.Solve following queries using joins and subqueries.
+1. Write a query to find the names (first_name, last_name), the salary of the employees who earn more than
+the average salary and who works in any of the IT departments.
+2. Write a query to find the names (first_name, last_name), the salary of the employees who earn the same
+salary as the minimum salary for all departments.
+3. Write a query to display the employee ID, first name, last names, salary of all employees whose salary is
+above average for their departments.
+4. Write a query to display the department name, manager name, and city.
+5. Write a query to display the name (first_name, last_name), hire date, salary of all managers whose
+experience is more than 15 years.
+
+
+-- Create the Manager table
+CREATE TABLE Manager (
+    Manager_id INT PRIMARY KEY,
+    Manager_name VARCHAR(100)
+);
+
+-- Create the Locations table
+CREATE TABLE Locations (
+    Location_id INT PRIMARY KEY,
+    Street_address VARCHAR(100),
+    Postal_code VARCHAR(10),
+    City VARCHAR(50),
+    State VARCHAR(50),
+    Country_id VARCHAR(10)
+);
+
+-- Create the Departments table with a foreign key to Manager and Locations
+CREATE TABLE Departments (
+    Department_id INT PRIMARY KEY,
+    Department_name VARCHAR(100),
+    Manager_id INT,
+    Location_id INT,
+    FOREIGN KEY (Manager_id) REFERENCES Manager(Manager_id),
+    FOREIGN KEY (Location_id) REFERENCES Locations(Location_id)
+);
+
+-- Create the Employee table with foreign keys to Manager and Departments
+CREATE TABLE Employee (
+    Employee_id INT PRIMARY KEY,
+    First_name VARCHAR(50),
+    Last_name VARCHAR(50),
+    Hire_date DATE,
+    Salary DECIMAL(10, 2),
+    Job_title VARCHAR(100),
+    Manager_id INT,
+    Department_id INT,
+    FOREIGN KEY (Manager_id) REFERENCES Manager(Manager_id),
+    FOREIGN KEY (Department_id) REFERENCES Departments(Department_id)
+);
+
+-- Insert sample data into Manager table
+INSERT INTO Manager VALUES
+(1, 'Rajesh Sharma'),
+(2, 'Neha Patel'),
+(3, 'Arvind Kumar');
+
+-- Insert sample data into Locations table
+INSERT INTO Locations VALUES
+(1, '123 MG Road', '400001', 'Mumbai', 'Maharashtra', 'IN'),
+(2, '456 Elgin Road', '700001', 'Kolkata', 'West Bengal', 'IN'),
+(3, '789 Indira Nagar', '110001', 'Delhi', 'Delhi', 'IN');
+
+-- Insert sample data into Departments table
+INSERT INTO Departments VALUES
+(1, 'IT', 1, 1),
+(2, 'HR', 2, 2),
+(3, 'Finance', 3, 3);
+
+-- Insert sample data into Employee table
+INSERT INTO Employee VALUES
+(101, 'Amit', 'Verma', '2015-06-15', 75000, 'Software Engineer', 1, 1),
+(102, 'Priya', 'Kumar', '2018-03-10', 55000, 'HR Manager', 2, 2),
+(103, 'Sandeep', 'Reddy', '2012-08-20', 90000, 'Finance Analyst', 3, 3),
+(104, 'Ravi', 'Sharma', '2016-07-25', 50000, 'Software Engineer', 1, 1),
+(105, 'Deepa', 'Patel', '2020-11-30', 65000, 'HR Executive', 2, 2),
+(106, 'Vikram', 'Singh', '2017-12-05', 80000, 'Finance Manager', 3, 3),
+(107, 'Neha', 'Gupta', '2019-04-01', 45000, 'Software Developer', 1, 1),
+(108, 'Manoj', 'Choudhury', '2014-05-18', 75000, 'HR Head', 2, 2);
+
+SELECT e.First_name, e.Last_name, e.Salary
+FROM Employee e
+JOIN Departments d ON e.Department_id = d.Department_id
+WHERE d.Department_name = 'IT' 
+AND e.Salary > (SELECT AVG(Salary) FROM Employee WHERE Department_id = e.Department_id);
+
+SELECT e.First_name, e.Last_name, e.Salary
+FROM Employee e
+WHERE e.Salary = (SELECT MIN(Salary) FROM Employee WHERE Department_id = e.Department_id);
+
+SELECT e.Employee_id, e.First_name, e.Last_name, e.Salary
+FROM Employee e
+WHERE e.Salary > (SELECT AVG(Salary) FROM Employee WHERE Department_id = e.Department_id);
+
+SELECT d.Department_name, m.Manager_name, l.City
+FROM Departments d
+JOIN Manager m ON d.Manager_id = m.Manager_id
+JOIN Locations l ON d.Location_id = l.Location_id;
+
+SELECT e.First_name, e.Last_name, e.Hire_date, e.Salary
+FROM Employee e
+WHERE e.Manager_id IS NOT NULL 
+AND DATEDIFF(CURRENT_DATE, e.Hire_date) > (15 * 365);  -- Experience greater than 15 years
