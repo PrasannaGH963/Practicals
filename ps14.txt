@@ -1,0 +1,89 @@
+Problem Statement 14 (DML USING MYSQL)
+Create following tables using a given schema and insert appropriate data into the same:
+Customer (CustID, Name, Cust_Address, Phone_no, Email_ID, Age)
+Branch (Branch ID, Branch_Name, Address)
+Account (Account_no, Branch ID, CustID, date_open, Account_type, Balance)
+1. Modify the size of column “Email_Address” to 20 in Customer table.
+2. Change the column “Email_Address” to Not Null in Customer table.
+3. Display the total customers with the balance >50, 000 Rs.
+4. Display average balance for account type=”Saving Account”.
+5. Display the customer details that lives in Pune or name starts with ’A’.
+6. Create a table Saving_Account with (Account_no, Branch ID, CustID, date_open, Balance) using
+Account Table.
+7. Display the customer details Age wise with balance>=20,000Rs
+
+CREATE TABLE Customer (
+    CustID INT PRIMARY KEY,
+    Name VARCHAR(50),
+    Cust_Address VARCHAR(100),
+    Phone_no VARCHAR(15),
+    Email_ID VARCHAR(50),
+    Age INT
+);
+
+CREATE TABLE Branch (
+    Branch_ID INT PRIMARY KEY,
+    Branch_Name VARCHAR(50),
+    Address VARCHAR(100)
+);
+
+CREATE TABLE Account (
+    Account_no INT PRIMARY KEY,
+    Branch_ID INT,
+    CustID INT,
+    date_open DATE,
+    Account_type VARCHAR(50),
+    Balance DECIMAL(10, 2),
+    FOREIGN KEY (Branch_ID) REFERENCES Branch(Branch_ID),
+    FOREIGN KEY (CustID) REFERENCES Customer(CustID)
+);
+
+ALTER TABLE Customer
+MODIFY COLUMN Email_ID VARCHAR(20);
+
+ALTER TABLE Customer
+MODIFY COLUMN Email_ID VARCHAR(20) NOT NULL;
+
+-- Insert some sample data into the tables
+INSERT INTO Customer VALUES
+(1, 'Amit Kumar', 'Pune', '9823456789', 'amit@ex.com', 30),
+(2, 'Ajay Mehta', 'Mumbai', '9912345678', 'ajay@me.com', 40),
+(3, 'Alok Sharma', 'Delhi', '9834567890', 'alok@sh.com', 35),
+(4, 'Deepa Patel', 'Bangalore', '9845678901', 'deepa@ex.com', 28);
+
+
+INSERT INTO Branch VALUES
+(101, 'Mumbai Branch', 'Mumbai, Maharashtra'),
+(102, 'Pune Branch', 'Pune, Maharashtra'),
+(103, 'Delhi Branch', 'Delhi');
+
+INSERT INTO Account VALUES
+(1001, 102, 1, '2022-01-01', 'Saving Account', 30000),
+(1002, 101, 2, '2023-02-15', 'Current Account', 60000),
+(1003, 103, 3, '2021-05-20', 'Saving Account', 45000),
+(1004, 102, 4, '2020-07-10', 'Saving Account', 12000);
+
+
+SELECT COUNT(DISTINCT CustID) AS Total_Customers
+FROM Account
+WHERE Balance > 50000;
+
+SELECT AVG(Balance) AS Average_Balance
+FROM Account
+WHERE Account_type = 'Saving Account';
+
+SELECT *
+FROM Customer
+WHERE Cust_Address = 'Pune' OR Name LIKE 'A%';
+
+CREATE TABLE Saving_Account AS
+SELECT Account_no, Branch_ID, CustID, date_open, Balance
+FROM Account
+WHERE Account_type = 'Saving Account';
+
+SELECT * 
+FROM Customer
+JOIN Account ON Customer.CustID = Account.CustID
+WHERE Account.Balance >= 20000
+ORDER BY Customer.Age;
+

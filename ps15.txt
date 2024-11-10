@@ -1,0 +1,120 @@
+Problem Statement 15 (Cursors)
+Consider the following schema for Products table.
+Products(Product_id, Product_Name, Product_Type, Price)
+1. Write a parameterized cursor to display all products in the given price range of price and type ‘Apparel’.
+Hint: Take the user input for minimum and maximum price for price range.
+2. Write an explicit cursor to display information of all products with Price greater than 5000.
+3. Write an implicit cursor to display the number of records affected by the update operation incrementing Price
+of all products by 1000.
+
+
+CREATE TABLE Products (
+    Product_id INT PRIMARY KEY,
+    Product_Name VARCHAR(100),
+    Product_Type VARCHAR(50),
+    Price DECIMAL(10, 2)
+);
+
+-- Inserting sample data into the Products table
+INSERT INTO Products VALUES
+(1, 'T-shirt', 'Apparel', 800),
+(2, 'Jeans', 'Apparel', 1200),
+(3, 'Jacket', 'Apparel', 5000),
+(4, 'Shoes', 'Footwear', 3000),
+(5, 'Kurta', 'Apparel', 1500),
+(6, 'Sweater', 'Apparel', 2500),
+(7, 'Saree', 'Apparel', 4000),
+(8, 'Watch', 'Accessories', 8000),
+(9, 'Belt', 'Accessories', 2000),
+(10, 'Chappal', 'Footwear', 1000);
+
+DELIMITER //  -- Change delimiter to // to handle multi-line procedure
+
+CREATE PROCEDURE GetProductsByPriceRange (IN min_price DECIMAL(10, 2), IN max_price DECIMAL(10, 2))
+BEGIN
+    DECLARE done INT DEFAULT 0;
+    DECLARE p_id INT;
+    DECLARE p_name VARCHAR(100);
+    DECLARE p_type VARCHAR(50);
+    DECLARE p_price DECIMAL(10, 2);
+    
+    -- Declare a cursor to fetch products in the 'Apparel' type within the given price range
+    DECLARE product_cursor CURSOR FOR
+        SELECT Product_id, Product_Name, Product_Type, Price
+        FROM Products
+        WHERE Product_Type = 'Apparel' AND Price BETWEEN min_price AND max_price;
+    
+    -- Declare a handler to mark the end of cursor iteration
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
+    
+    OPEN product_cursor;  -- Open the cursor
+    
+    read_loop: LOOP
+        FETCH product_cursor INTO p_id, p_name, p_type, p_price;
+        IF done THEN
+            LEAVE read_loop;  -- Exit loop if no more data
+        END IF;
+        
+        -- Output the fetched product details
+        SELECT p_id AS Product_ID, p_name AS Product_Name, p_type AS Product_Type, p_price AS Price;
+    END LOOP;
+    
+    CLOSE product_cursor;  -- Close the cursor after use
+END //
+
+DELIMITER ;  -- Reset delimiter to default semicolon
+
+
+CALL GetProductsByPriceRange(1000, 3000);
+
+
+
+
+DELIMITER //  -- Change delimiter to // for multi-line procedure
+
+CREATE PROCEDURE GetExpensiveProducts()
+BEGIN
+    DECLARE done INT DEFAULT 0;
+    DECLARE p_id INT;
+    DECLARE p_name VARCHAR(100);
+    DECLARE p_type VARCHAR(50);
+    DECLARE p_price DECIMAL(10, 2);
+    
+    -- Declare an explicit cursor for selecting products with price greater than 5000
+    DECLARE product_cursor CURSOR FOR
+        SELECT Product_id, Product_Name, Product_Type, Price
+        FROM Products
+        WHERE Price > 5000;
+    
+    -- Declare a handler for when no more data is found
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
+    
+    OPEN product_cursor;  -- Open the cursor
+    
+    read_loop: LOOP
+        FETCH product_cursor INTO p_id, p_name, p_type, p_price;
+        IF done THEN
+            LEAVE read_loop;  -- Exit loop if no more data
+        END IF;
+        
+        -- Output the fetched product details
+        SELECT p_id AS Product_ID, p_name AS Product_Name, p_type AS Product_Type, p_price AS Price;
+    END LOOP;
+    
+    CLOSE product_cursor;  -- Close the cursor after use
+END //
+
+DELIMITER ;  -- Reset delimiter to default semicolon
+
+
+CALL GetExpensiveProducts();
+
+
+
+-- Increment the price of all products by 1000
+UPDATE Products
+SET Price = Price + 1000;
+
+-- Display the number of records affected by the update
+SELECT ROW_COUNT() AS Rows_Affected;
+

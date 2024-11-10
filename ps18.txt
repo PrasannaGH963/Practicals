@@ -1,0 +1,73 @@
+Problem Statement 18 (Procedures / Functions)
+Consider following schema for Bank database.
+Account(Account_No, Cust_Name, Balance, NoOfYears)
+Earned_Interest(Account_No, Interest_Amt)
+1. Write a PL/SQL procedure for following requirement. Take as input Account_No and Interest Rate from User.
+Calculate the Interest_Amt as simple interest for the given Account_No and store it in Earned_Interest table.
+Display all the details of Earned_Interest Table.
+2. Write a PLSQL function to display all records from Account table having Balance greater than 50,000.
+
+-- Create Account table
+CREATE TABLE Account (
+    Account_No INT PRIMARY KEY,
+    Cust_Name VARCHAR(100),
+    Balance DECIMAL(10, 2),
+    NoOfYears INT
+);
+
+-- Create Earned_Interest table
+CREATE TABLE Earned_Interest (
+    Account_No INT PRIMARY KEY,
+    Interest_Amt DECIMAL(10, 2),
+    FOREIGN KEY (Account_No) REFERENCES Account(Account_No)
+);
+
+-- Insert sample data into Account table
+INSERT INTO Account VALUES
+(1001, 'Amit Verma', 75000.00, 5),
+(1002, 'Priya Sharma', 40000.00, 3),
+(1003, 'Rajesh Kumar', 120000.00, 10),
+(1004, 'Neha Gupta', 25000.00, 2),
+(1005, 'Sandeep Reddy', 55000.00, 7);
+
+DELIMITER //
+
+CREATE PROCEDURE Calculate_Interest (IN p_Account_No INT, IN p_Interest_Rate DECIMAL(5, 2))
+BEGIN
+    DECLARE v_Balance DECIMAL(10, 2);
+    DECLARE v_NoOfYears INT;
+    DECLARE v_Interest_Amt DECIMAL(10, 2);
+
+    -- Fetch Balance and NoOfYears from Account table for the given Account_No
+    SELECT Balance, NoOfYears INTO v_Balance, v_NoOfYears
+    FROM Account
+    WHERE Account_No = p_Account_No;
+
+    -- Calculate Simple Interest: Interest = (Principal * Rate * Time) / 100
+    SET v_Interest_Amt = (v_Balance * p_Interest_Rate * v_NoOfYears) / 100;
+
+    -- Insert the calculated interest into Earned_Interest table
+    INSERT INTO Earned_Interest (Account_No, Interest_Amt)
+    VALUES (p_Account_No, v_Interest_Amt);
+
+    -- Display all records from Earned_Interest table
+    SELECT * FROM Earned_Interest;
+END //
+
+DELIMITER ;
+
+DELIMITER //
+
+CREATE PROCEDURE GetHighBalanceAccounts()
+BEGIN
+    SELECT * FROM Account WHERE Balance > 50000;
+END //
+
+DELIMITER ;
+
+-- Example: Call the procedure with Account_No = 1001 and Interest Rate = 5%
+CALL Calculate_Interest(1001, 5);
+
+
+-- Example: Call the procedure to get accounts with Balance > 50000
+CALL GetHighBalanceAccounts();

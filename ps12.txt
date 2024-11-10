@@ -1,0 +1,76 @@
+Problem Statement 12 (Triggers)
+Employee( emp_id, dept_idemp_name, DoJ, salary, commission,job_title)
+Consider the schema given above for Write a PLSQL Program to
+1. Create a Trigger to ensure the salary of the employee is not decreased.
+2. Whenever the job title is changed for an employee write the following details into job_history table. Employee
+ID, old job title, old department ID, DoJ for start date, system date for end date.
+
+
+-- Create the Employee Table
+CREATE TABLE Employee (
+    emp_id INT PRIMARY KEY,
+    dept_id INT,
+    emp_name VARCHAR(50),
+    DoJ DATE,
+    salary DECIMAL(10, 2),
+    commission DECIMAL(10, 2),
+    job_title VARCHAR(50)
+);
+
+-- Create the Job_History Table to store job title change history
+CREATE TABLE Job_History (
+    emp_id INT,
+    old_job_title VARCHAR(50),
+    old_dept_id INT,
+    start_date DATE,
+    end_date DATE,
+    PRIMARY KEY (emp_id, start_date)
+);
+
+-- Insert Sample Data with Indian Names
+INSERT INTO Employee (emp_id, dept_id, emp_name, DoJ, salary, commission, job_title) VALUES
+(1, 101, 'Rajesh Kumar', '2018-01-10', 50000, 5000, 'Software Engineer'),
+(2, 102, 'Anita Sharma', '2017-05-15', 60000, 6000, 'Data Analyst'),
+(3, 103, 'Suresh Patil', '2019-03-22', 45000, 4500, 'System Administrator'),
+(4, 104, 'Neha Singh', '2020-07-11', 55000, 5500, 'Project Manager');
+
+-- 1. Create Trigger to Ensure Salary is Not Decreased
+DELIMITER //
+CREATE TRIGGER trg_check_salary_increase
+BEFORE UPDATE ON Employee
+FOR EACH ROW
+BEGIN
+    IF NEW.salary < OLD.salary THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Salary decrease is not allowed.';
+    END IF;
+END;
+//
+DELIMITER ;
+
+-- 2. Create Trigger to Log Job Title Changes in Job_History Table
+DELIMITER //
+CREATE TRIGGER trg_job_title_change
+BEFORE UPDATE ON Employee
+FOR EACH ROW
+BEGIN
+    IF OLD.job_title <> NEW.job_title THEN
+        -- Insert old job details into Job_History
+        INSERT INTO Job_History (emp_id, old_job_title, old_dept_id, start_date, end_date)
+        VALUES (OLD.emp_id, OLD.job_title, OLD.dept_id, OLD.DoJ, CURDATE());
+    END IF;
+END;
+//
+DELIMITER ;
+
+-- Test the Triggers
+
+-- Test Salary Trigger by attempting to decrease the salary (should raise an error)
+-- This should fail with an error message: 'Salary decrease is not allowed.'
+UPDATE Employee SET salary = 40000 WHERE emp_id = 1;
+
+-- Test Job Title Change Trigger by updating job title
+UPDATE Employee SET job_title = 'Senior Software Engineer' WHERE emp_id = 1;
+
+-- Verify Job_History table for the job title change entry
+SELECT * FROM Job_History;

@@ -1,0 +1,112 @@
+Employee( emp_id, dept_idemp_name, DoJ, salary, commission,job_title)
+1. Consider the schema given above. Keep the commission column empty initially. Write a Stored Procedure to
+record the employee commission based on following conditions. If salary is more than 10000 then commission
+is 0.4%, if Salary is less than 10000 but experience is more than 10 years then 0.35%, if salary is less than 3000
+then commission is 0.25%. In the remaining cases commission is 0.15%.
+2. Write a PLSQL Function that takes department ID and returns the name of the manager of the department.
+
+
+
+-- Create Employee Table
+CREATE TABLE Employee (
+    emp_id INT PRIMARY KEY,
+    emp_name VARCHAR(100),
+    salary DECIMAL(10, 2),
+    commission DECIMAL(10, 2) DEFAULT 0.00,
+    dept_id INT,
+    DoJ DATE,   -- Date of Joining
+    job_title VARCHAR(50)
+);
+
+-- Create Salary_Increment Table
+CREATE TABLE Salary_Increment (
+    emp_id INT,
+    new_salary DECIMAL(10, 2),
+    FOREIGN KEY (emp_id) REFERENCES Employee(emp_id)
+);
+
+-- Insert records into Employee table
+INSERT INTO Employee (emp_id, emp_name, salary, dept_id, DoJ, job_title)
+VALUES
+(101, 'Amit Sharma', 12000.00, 1, '2010-01-10', 'Manager'),
+(102, 'Priya Gupta', 8000.00, 1, '2015-06-20', 'Developer'),
+(103, 'Rajeev Kumar', 2500.00, 2, '2020-04-01', 'Intern'),
+(104, 'Suman Singh', 9500.00, 3, '2012-08-15', 'Developer'),
+(105, 'Neha Raj', 15000.00, 2, '2008-11-10', 'Manager'),
+(106, 'Kiran Yadav', 18000.00, 3, '2005-05-12', 'Developer');
+
+-- Create Procedure to calculate commission
+DELIMITER //
+CREATE PROCEDURE CalculateCommission()
+BEGIN
+    DECLARE v_emp_id INT;
+    DECLARE v_salary DECIMAL(10, 2);
+    DECLARE v_commission_rate DECIMAL(5, 4);
+    DECLARE v_doJ DATE;
+    DECLARE v_years_of_experience INT;
+    DECLARE done INT DEFAULT 0;
+
+    DECLARE employee_cursor CURSOR FOR
+        SELECT emp_id, salary, DoJ
+        FROM Employee;
+
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
+
+    OPEN employee_cursor;
+
+    read_loop: LOOP
+        FETCH employee_cursor INTO v_emp_id, v_salary, v_doJ;
+
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+
+        SET v_years_of_experience = TIMESTAMPDIFF(YEAR, v_doJ, CURDATE());
+
+        IF v_salary > 10000 THEN
+            SET v_commission_rate = 0.004; -- 0.4%
+        ELSEIF v_salary <= 10000 AND v_years_of_experience > 10 THEN
+            SET v_commission_rate = 0.0035; -- 0.35%
+        ELSEIF v_salary < 3000 THEN
+            SET v_commission_rate = 0.0025; -- 0.25%
+        ELSE
+            SET v_commission_rate = 0.0015; -- 0.15%
+        END IF;
+
+        UPDATE Employee
+        SET commission = v_salary * v_commission_rate
+        WHERE emp_id = v_emp_id;
+    END LOOP;
+
+    CLOSE employee_cursor;
+END //
+DELIMITER ;
+
+-- Call the procedure to calculate commissions
+CALL CalculateCommission();
+
+-- Display employee details with commission
+SELECT emp_id, emp_name, salary, commission
+FROM Employee;
+
+-- Create function to get the department manager
+DELIMITER //
+CREATE FUNCTION GetDepartmentManager(dept_id INT) 
+RETURNS VARCHAR(100)
+DETERMINISTIC
+READS SQL DATA
+BEGIN
+    DECLARE manager_name VARCHAR(100);
+
+    SELECT emp_name 
+    INTO manager_name
+    FROM Employee 
+    WHERE dept_id = dept_id AND job_title = 'Manager' 
+    LIMIT 1;
+
+    RETURN manager_name;
+END //
+DELIMITER ;
+
+-- Test the GetDepartmentManager function by passing a department ID
+SELECT GetDepartmentManager(1);  -- Change 1 to the desired department ID
