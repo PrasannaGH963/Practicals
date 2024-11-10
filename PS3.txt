@@ -1,0 +1,88 @@
+
+Employee( emp_id, dept_idemp_name, DoJ, salary, commission,job_title)
+Salary_Increment(emp_id, new_salary)
+Consider the schema given above. Write a PLSQL Unnamed Block of code to increase the salary of employee
+115 based on the following conditions:
+Accept emp_id from user. If experience of employee is more than 10 years, increase salary by 20%. If experience
+is greater than 5 years, increase salary by 10% Otherwise 5%. (Hint: Find the years of experience from Date of
+Joining (DoJ)). Store the incremented salary in Salary_Increment table.
+Also handle the exception by named exception handler or user defined exception handler.
+
+
+
+-- Set delimiter to define the stored procedure
+DELIMITER //
+
+-- Create the Employee table
+CREATE TABLE Employee (
+    emp_id INT PRIMARY KEY,
+    dept_id INT,
+    emp_name VARCHAR(50),
+    DoJ DATE,
+    salary DECIMAL(10, 2),
+    commission DECIMAL(10, 2),
+    job_title VARCHAR(50)
+);
+
+-- Create the Salary_Increment table
+CREATE TABLE Salary_Increment (
+    emp_id INT,
+    new_salary DECIMAL(10, 2),
+    PRIMARY KEY (emp_id),
+    FOREIGN KEY (emp_id) REFERENCES Employee(emp_id)
+);
+
+-- Insert sample data into Employee table with Indian names
+INSERT INTO Employee (emp_id, dept_id, emp_name, DoJ, salary, commission, job_title) VALUES
+(115, 101, 'Amit Sharma', '2010-08-15', 50000, 2000, 'Manager'),
+(116, 102, 'Suman Verma', '2018-04-20', 40000, 1000, 'Developer'),
+(117, 103, 'Ravi Patel', '2015-07-10', 45000, 1500, 'Analyst'),
+(118, 104, 'Priya Rao', '2012-11-25', 55000, 2500, 'Senior Developer'),
+(119, 105, 'Vikas Singh', '2020-01-01', 38000, 1200, 'Junior Developer');
+
+-- Create a stored procedure to update salary based on years of experience
+CREATE PROCEDURE UpdateSalary (IN v_emp_id INT)
+BEGIN
+    DECLARE v_salary DECIMAL(10, 2);
+    DECLARE v_experience INT;
+    DECLARE v_new_salary DECIMAL(10, 2);
+
+    -- Declare a handler to display a message if no matching employee is found
+    DECLARE CONTINUE HANDLER FOR NOT FOUND
+        SET v_salary = NULL;
+
+    -- Retrieve salary and experience of the employee
+    SELECT salary, FLOOR(DATEDIFF(CURDATE(), DoJ) / 365) INTO v_salary, v_experience
+    FROM Employee
+    WHERE emp_id = v_emp_id;
+
+    -- Check if employee ID exists
+    IF v_salary IS NULL THEN
+        SELECT CONCAT('Error: Employee with ID ', v_emp_id, ' not found.') AS ErrorMessage;
+    ELSE
+        -- Calculate the new salary based on experience
+        IF v_experience > 10 THEN
+            SET v_new_salary = v_salary * 1.20; -- 20% increase
+        ELSEIF v_experience > 5 THEN
+            SET v_new_salary = v_salary * 1.10; -- 10% increase
+        ELSE
+            SET v_new_salary = v_salary * 1.05; -- 5% increase
+        END IF;
+
+        -- Insert the new salary into Salary_Increment table
+        INSERT INTO Salary_Increment (emp_id, new_salary)
+        VALUES (v_emp_id, v_new_salary)
+        ON DUPLICATE KEY UPDATE new_salary = v_new_salary;
+
+        -- Display result
+        SELECT CONCAT('Salary increment applied for Employee ID: ', v_emp_id) AS Message,
+               CONCAT('New Salary: ', v_new_salary) AS NewSalary;
+    END IF;
+
+END //
+
+-- Reset delimiter to default
+DELIMITER ;
+
+-- Call the procedure with an example employee ID, e.g., 115
+CALL UpdateSalary(115);
